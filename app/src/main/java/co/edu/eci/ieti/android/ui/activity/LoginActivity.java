@@ -47,33 +47,26 @@ public class LoginActivity
     public void onLoginClicked( final View view )
     {
         final LoginWrapper loginWrapper = validInputFields();
-        if ( loginWrapper != null )
-        {
+        if ( loginWrapper != null ) {
             view.setEnabled( false );
-            executorService.execute( new Runnable()
-            {
+            executorService.execute( new Runnable() {
                 @Override
                 public void run()
                 {
-                    try
-                    {
+                    try {
                         Call<Token> call = retrofitNetwork.getAuthService().login( loginWrapper );
                         Response<Token> response = call.execute();
-                        if ( response.isSuccessful() )
-                        {
+                        if ( response.isSuccessful() ) {
                             Token token = response.body();
                             storage.saveToken( token );
                             startActivity( new Intent( LoginActivity.this, MainActivity.class ) );
                             finish();
                         }
-                        else
-                        {
+                        else {
                             showErrorMessage( view );
                         }
 
-                    }
-                    catch ( IOException e )
-                    {
+                    } catch ( IOException e ) {
                         e.printStackTrace();
                         showErrorMessage( view );
                     }

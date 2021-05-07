@@ -1,4 +1,4 @@
-# 3.3 Android Local Storage & List Views
+# LAB 13 IETI
 * Consume secure REST API wih Retrofit
 * Configure and integrate Android local storage using ROOM Persistence library.
 * Create a List View using RecyclerView and CardLayout.

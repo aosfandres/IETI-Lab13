@@ -10,11 +10,25 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import co.edu.eci.ieti.R;
+import co.edu.eci.ieti.android.network.RetrofitNetwork;
+import co.edu.eci.ieti.android.model.Task;
 import co.edu.eci.ieti.android.storage.Storage;
+import co.edu.eci.ieti.android.ui.cards.TasksAdapter;
+import retrofit2.Call;
+import retrofit2.Response;
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity
     extends AppCompatActivity
@@ -22,6 +36,9 @@ public class MainActivity
 {
 
     private Storage storage;
+    private List<Task> tasks;
+    private final ExecutorService executorService = Executors.newFixedThreadPool( 1 );
+    private final RetrofitNetwork retrofitNetwork = new RetrofitNetwork();
 
     @Override
     protected void onCreate( Bundle savedInstanceState )
@@ -52,6 +69,7 @@ public class MainActivity
 
         NavigationView navigationView = findViewById( R.id.nav_view );
         navigationView.setNavigationItemSelectedListener( this );
+        loadTask();
     }
 
     @Override
@@ -110,5 +128,50 @@ public class MainActivity
         DrawerLayout drawer = findViewById( R.id.drawer_layout );
         drawer.closeDrawer( GravityCompat.START );
         return true;
+    }
+    public void loadTask(){
+        executorService.execute( new Runnable() {
+            @Override
+            public void run()
+            {
+                try {
+                    Call<List<Task>> call = new RetrofitNetwork(storage.getToken()).getTaskService().getTasks();
+                    Response<List<Task>> response = call.execute();
+                    if ( response.isSuccessful() ) {
+                        tasks = response.body();
+                        System.out.println(tasks.size());
+                        drawTaskList();
+                    }
+                    else {
+                        System.out.println("fallo la peticion"+ response.errorBody().toString());
+                    }
+                } catch ( IOException e ) {
+                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                }
+            }
+        } );
+    }
+    private void drawTaskList(){
+        System.out.println(tasks.get(1).getDueDate().toString());
+        if(tasks != null){
+            TasksAdapter tasksAdapter = new TasksAdapter(tasks);
+            RecyclerView recyclerView = findViewById(R.id.recyclerView);
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            recyclerView.setAdapter(tasksAdapter);
+        }
+    }
+    private void showErrorMessage( final View view )
+    {
+        runOnUiThread( new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                view.setEnabled( true );
+                Snackbar.make( view, getString( R.string.server_error_message ), Snackbar.LENGTH_LONG );
+            }
+        } );
+
     }
 }
